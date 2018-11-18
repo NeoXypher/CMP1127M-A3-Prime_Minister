@@ -14,6 +14,7 @@ namespace CMP1127M_A3_Prime_Minister
         {
             string[] Name = new string[76];
             string[] startDate = new string[76];
+            string[] endDate = new string[76];
             Console.WriteLine("The Prime Minister Game");
             while (true)
             {
@@ -21,12 +22,13 @@ namespace CMP1127M_A3_Prime_Minister
                 string response = Console.ReadLine();
                 if (response == "1")
                 {
-                    Game.LoadData(ref Name, ref startDate);
-                    Game.PlayGame(Name, startDate);
+                    Game.LoadData(ref Name, ref startDate, ref endDate);
+                    Game.PlayGameMode1(Name, startDate);
                 }
                 else if (response == "2")
                 {
-                    Game.LoadData(ref Name, ref startDate);
+                    Game.LoadData(ref Name, ref startDate, ref endDate);
+                    Game.PlayGameMode2(Name, startDate, endDate);
                 }
                 else if (response == "3")
                 {
@@ -42,7 +44,7 @@ namespace CMP1127M_A3_Prime_Minister
 
     class Game
     {
-        public static void LoadData(ref string[] Name, ref string[] startDate)
+        public static void LoadData(ref string[] Name, ref string[] startDate, ref string[] endDate)
         {
             StreamReader SR = new StreamReader("list_of_prime_ministers_of_uk-1.csv");
             String Line = SR.ReadLine();
@@ -52,12 +54,15 @@ namespace CMP1127M_A3_Prime_Minister
                 string[] item = Line.Split(',');
                 Name[i] = item[1];
                 startDate[i] = item[3];
+                endDate[i] = item[4];
+                if (endDate[i] == "Incumbent")
+                    endDate[i] = Convert.ToString(DateTime.Today);
                 DateTime getdate = Convert.ToDateTime(startDate[i]);
                 //Console.WriteLine("Prime Minister: {0}, Start Date: {1}", Name[i], getdate.ToString("dd/MM/yyyy"));
             }
         }
 
-        public static void PlayGame(string[] Name, string[] startDate)
+        public static void PlayGameMode1(string[] Name, string[] startDate)
         {
             string[] options = new string[3];
             string response;
@@ -71,7 +76,7 @@ namespace CMP1127M_A3_Prime_Minister
                     options[i] = Name[rnd.Next(0, 76)];
                     if ((i == 1 && options[i] == options[i - 1]) || (i == 2 && (options[i] == options[i - 1] || options[i] == options[i - 2])))
                         i -= 1;
-                    
+
                 }
                 Console.WriteLine("Which Prime Minister Led First? 1) {0} 2) {1} 3) {2}", options[0], options[1], options[2]);
                 response = Console.ReadLine();
@@ -93,7 +98,7 @@ namespace CMP1127M_A3_Prime_Minister
                 {
                     Console.WriteLine("Correct!");
                     NewPlayer.PlayerScore = 1;
-                } 
+                }
                 else
                     Console.WriteLine("Incorrect!");
             }
@@ -101,9 +106,9 @@ namespace CMP1127M_A3_Prime_Minister
             Console.WriteLine("Would you like to play again? Y/N");
             response = Console.ReadLine();
             if (response == "Y" || response == "y")
-                PlayGame(Name, startDate);
+                PlayGameMode1(Name, startDate);
             else if (response != "N" || response != "n")
-            { }    
+            { }
         }
 
         public static bool checkAnswer(string ChosenName, string Alternate1, string Alternate2, string[] Name, string[] startDate)
@@ -121,7 +126,7 @@ namespace CMP1127M_A3_Prime_Minister
                 else if (Name[i] == Alternate1 && found[1] == false)
                 {
                     found[1] = true;
-                    Dates[1] = startDate[i]; 
+                    Dates[1] = startDate[i];
                 }
                 else if (Name[i] == Alternate2 && found[2] == false)
                 {
@@ -133,6 +138,59 @@ namespace CMP1127M_A3_Prime_Minister
                 result = true;
             return result;
         }
+
+
+        public static void PlayGameMode2(string[] Name, string[] startDate, string[] endDate)
+        {
+            string[] options = new string[3];
+            string response;
+            int chosenAnswer, chosenEntry;
+            Player NewPlayer = new Player();
+            Random rnd = new Random();
+            DateTime InitialDate = new DateTime(1995, 1, 1);
+            DateTime EndDate = DateTime.Today;
+            for (int turns = 1; turns <= 5; turns++)
+            {
+                chosenAnswer = rnd.Next(0, 3);
+                for (int i = 0; i < 3; i++)
+                {
+                    chosenEntry = rnd.Next(0, 76);
+                    //Console.WriteLine(chosenEntry);
+                    options[i] = Name[chosenEntry];
+                    if ((i == 1 && options[i] == options[i - 1]) || (i == 2 && (options[i] == options[i - 1] || options[i] == options[i - 2])))
+                        i -= 1;
+                    if (chosenAnswer == i)
+                    {
+                        InitialDate = Convert.ToDateTime(startDate[chosenEntry]);
+                        //Console.WriteLine(InitialDate);
+                        EndDate = Convert.ToDateTime(endDate[chosenEntry]);
+                        //Console.WriteLine(EndDate);
+                        if (InitialDate > EndDate)
+                            i -= 1;
+                    }    
+                }
+                int RangeOfDates = (EndDate - InitialDate).Days;
+                DateTime RandomDate = InitialDate.AddDays(rnd.Next(RangeOfDates));
+                Console.WriteLine("Which Prime Minister Led on {0}? 1) {1} 2) {2} 3) {3}", RandomDate.ToString("dd/MM/yyyy"), options[0], options[1], options[2]);
+                response = Console.ReadLine();
+                Int32.TryParse(response, out int number);
+                if (number == chosenAnswer + 1)
+                {
+                    Console.WriteLine("Correct!");
+                    NewPlayer.PlayerScore = 1;
+                }
+                else
+                    Console.WriteLine("Incorrect!");
+            }
+            Console.WriteLine("You got {0} out of 5!", NewPlayer.PlayerScore);
+            Console.WriteLine("Would you like to play again? Y/N");
+            response = Console.ReadLine();
+            if (response == "Y" || response == "y")
+                PlayGameMode2(Name, startDate, endDate);
+            else if (response != "N" || response != "n")
+            { }
+        }
+ 
     }
 
     class Player
